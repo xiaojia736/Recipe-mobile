@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>智能菜谱 - 移动版</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- 顶部导航/标题栏 -->
+    <header class="mobile-header">
+        <h1 id="page-title">本周规划</h1>
+        <button id="header-action-btn" class="header-btn hidden">+</button>
+    </header>
+
+    <!-- 主内容区域 -->
+    <main class="app-container">
+        
+        <!-- 1. 规划页面 (Planner) -->
+        <section id="page-planner" class="page-section active">
+            <div class="planner-list">
+                <!-- 周四 -->
+                <div class="day-card">
+                    <div class="day-header">周四</div>
+                    <div class="meal-row" data-day="thu" data-type="lunch">
+                        <div class="meal-label sun">午餐</div>
+                        <div class="meal-content"></div>
+                    </div>
+                    <div class="meal-row" data-day="thu" data-type="dinner">
+                        <div class="meal-label moon">晚餐</div>
+                        <div class="meal-content"></div>
+                    </div>
+                </div>
+
+                <!-- 周五 -->
+                <div class="day-card">
+                    <div class="day-header">周五</div>
+                    <div class="meal-row" data-day="fri" data-type="lunch">
+                        <div class="meal-label sun">午餐</div>
+                        <div class="meal-content"></div>
+                    </div>
+                    <div class="meal-row" data-day="fri" data-type="dinner">
+                        <div class="meal-label moon">晚餐</div>
+                        <div class="meal-content"></div>
+                    </div>
+                </div>
+
+                <!-- 周六 -->
+                <div class="day-card">
+                    <div class="day-header">周六</div>
+                    <div class="meal-row" data-day="sat" data-type="lunch">
+                        <div class="meal-label sun">午餐</div>
+                        <div class="meal-content"></div>
+                    </div>
+                    <div class="meal-row" data-day="sat" data-type="dinner">
+                        <div class="meal-label moon">晚餐</div>
+                        <div class="meal-content"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="action-area">
+                <button id="clear-plan-btn" class="btn-danger-text">清空本周规划</button>
+            </div>
+        </section>
+
+        <!-- 2. 菜品库页面 (Dishes) -->
+        <section id="page-dishes" class="page-section">
+            <div class="search-bar">
+                <input type="text" id="dish-search" placeholder="🔍 搜索菜品...">
+            </div>
+            <div id="dish-list-container" class="dish-list">
+                <!-- Dynamic Content -->
+            </div>
+        </section>
+
+        <!-- 3. 清单页面 (Shopping) -->
+        <section id="page-shopping" class="page-section">
+            <div class="shopping-actions-top">
+                <button id="copy-list-btn" class="btn-primary-outline">📋 复制清单</button>
+            </div>
+            <div id="shopping-list-container" class="shopping-list">
+                <div class="empty-state">暂无内容，请先规划餐单</div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 底部导航栏 -->
+    <nav class="bottom-nav">
+        <a href="#" class="nav-item active" data-target="page-planner" data-title="本周规划">
+            <span class="icon">📅</span>
+            <span class="label">规划</span>
+        </a>
+        <a href="#" class="nav-item" data-target="page-dishes" data-title="菜品库">
+            <span class="icon">🥗</span>
+            <span class="label">菜品</span>
+        </a>
+        <a href="#" class="nav-item" data-target="page-shopping" data-title="采购清单">
+            <span class="icon">🛒</span>
+            <span class="label">清单</span>
+        </a>
+    </nav>
+
+    <!-- 弹窗：添加/编辑菜品 -->
+    <div id="dish-form-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="form-title">添加菜品</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="dish-id">
+                <div class="form-group">
+                    <label>菜名</label>
+                    <input type="text" id="dish-name" placeholder="例如：红烧排骨">
+                </div>
+                <div class="form-group">
+                    <label>类型</label>
+                    <div class="type-selector">
+                        <label><input type="radio" name="dish-type" value="meat" checked> 荤菜</label>
+                        <label><input type="radio" name="dish-type" value="veg"> 素菜</label>
+                        <label><input type="radio" name="dish-type" value="soup"> 汤品</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>食材 (逗号分隔)</label>
+                    <textarea id="dish-ingredients" placeholder="排骨, 姜, 葱"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>备注</label>
+                    <input type="text" id="dish-notes" placeholder="如：孩子爱吃">
+                </div>
+                <div class="form-group">
+                    <label>做法/链接</label>
+                    <textarea id="dish-steps" placeholder="做法步骤或链接..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="save-dish-btn" class="btn-primary block">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗：选择菜品加入规划 -->
+    <div id="selector-modal" class="modal hidden bottom-sheet">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>选择菜品</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body no-padding">
+                <div class="selector-list" id="selector-list">
+                    <!-- Dynamic -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示条 -->
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
