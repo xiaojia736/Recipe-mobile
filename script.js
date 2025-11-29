@@ -174,6 +174,22 @@ function selectDishForPlan(dishId) {
 }
 
 // --- Dish Management ---
+function showDishPractice(id) {
+    const dish = dishes.find(d => d.id === id);
+    if (!dish) return;
+
+    const content = dish.steps ? dish.steps.trim() : '暂无做法信息';
+
+    // Check if it is a link (starts with http:// or https://)
+    if (content.match(/^https?:\/\//i)) {
+        window.open(content, '_blank');
+    } else {
+        document.getElementById('recipe-title').innerText = dish.name;
+        document.getElementById('recipe-content').innerText = content;
+        showModal('recipe-modal');
+    }
+}
+
 function renderDishList() {
     const container = document.getElementById('dish-list-container');
     const filter = document.getElementById('dish-search').value.toLowerCase();
@@ -187,7 +203,7 @@ function renderDishList() {
         const icon = { meat:'🍖', veg:'🥬', soup:'🍲' }[dish.type];
         
         card.innerHTML = `
-            <div class="dish-info">
+            <div class="dish-info" onclick="showDishPractice(${dish.id})">
                 <h4><span class="dish-icon">${icon}</span>${dish.name}</h4>
                 <div class="dish-meta">${dish.ingredients || '无食材信息'}</div>
             </div>
