@@ -8,6 +8,7 @@ let mealPlan = JSON.parse(localStorage.getItem('menu_plan')) || {};
 
 // State for UI
 let currentPlannerTarget = null; // { day: 'thu', type: 'lunch' }
+let dishToDeleteId = null; // Store ID for deletion
 
 // DOM Elements
 const navItems = document.querySelectorAll('.nav-item');
@@ -23,6 +24,7 @@ function init() {
     renderDishList();
     setupNav();
     setupModals();
+    setupConfirmModal();
     
     // Header Action Button Logic
     headerActionBtn.addEventListener('click', () => {
@@ -198,25 +200,180 @@ function renderDishList() {
     const filtered = dishes.filter(d => d.name.toLowerCase().includes(filter));
     
     filtered.forEach(dish => {
-        const card = document.createElement('div');
-        card.className = 'dish-card';
-        const icon = { meat:'🍖', veg:'🥬', soup:'🍲' }[dish.type];
+        // Create Container
+        const swipeContainer = document.createElement('div');
+        swipeContainer.className = 'dish-swipe-container';
         
-        card.innerHTML = `
-            <div class="dish-info" onclick="showDishPractice(${dish.id})">
-                <h4><span class="dish-icon">${icon}</span>${dish.name}</h4>
-                <div class="dish-meta">${dish.ingredients || '无食材信息'}</div>
-            </div>
-            <div class="dish-actions">
-                <!-- Simple Edit Trigger -->
-                <button class="btn-primary-outline" onclick="openDishForm(${dish.id})">编辑</button>
+        // Icon
+        const icon = { meat:'🍖', veg:'🥬', soup:'🍲' }[dish.type];
+
+        swipeContainer.innerHTML = `
+            <div class="dish-delete-action" data-id="${dish.id}">删除</div>
+            <div class="dish-card" data-id="${dish.id}">
+                <div class="dish-info" onclick="showDishPractice(${dish.id})">
+                    <h4><span class="dish-icon">${icon}</span>${dish.name}</h4>
+                    <div class="dish-meta">${dish.ingredients || '无食材信息'}</div>
+                </div>
+                <div class="dish-actions">
+                    <button class="btn-primary-outline" onclick="openDishForm(${dish.id})">编辑</button>
+                </div>
             </div>
         `;
-        container.appendChild(card);
+
+        container.appendChild(swipeContainer);
+        
+        // Add swipe listeners to this specific card
+        setupSwipe(swipeContainer.querySelector('.dish-card'));
+        
+        // Add delete listener
+        const deleteBtn = swipeContainer.querySelector('.dish-delete-action');
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            confirmDeleteDish(dish.id);
+        });
+    });
+}
+
+// Swipe Logic
+function setupSwipe(element) {
+    let startX = 0;
+    let startY = 0;
+    let currentX = 0;
+    let isSwiping = false;
+    let isOpened = false;
+    const threshold = 30; // Min distance to trigger swipe
+    const maxSwipe = -80; // Max left swipe distance (width of delete btn)
+
+    element.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        
+        // If already opened, set currentX to maxSwipe to allow closing
+        if (element.classList.contains('swiped-left')) {
+            currentX = maxSwipe;
+            isOpened = true;
+        } else {
+            currentX = 0;
+            isOpened = false;
+            // Close others
+            document.querySelectorAll('.dish-card.swiped-left').forEach(el => {
+                if (el !== element) {
+                    el.style.transform = 'translateX(0)';
+                    el.classList.remove('swiped-left');
+                }
+            });
+        }
+        
+        element.style.transition = 'none'; // Disable transition during drag
+    }, {passive: true});
+
+    element.addEventListener('touchmove', (e) => {
+        const touchX = e.touches[0].clientX;
+        const touchY = e.touches[0].clientY;
+        const deltaX = touchX - startX;
+        const deltaY = touchY - startY;
+
+        // Determine if scrolling or swiping (more horizontal than vertical)
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
+            isSwiping = true;
+            // e.preventDefault(); // Prevent scrolling if needed, but 'passive: true' prevents this. 
+            // In modern browsers, better to let scroll happen if angle is steep, but here we want horizontal control.
+            
+            let newX = currentX + deltaX;
+            
+            // Boundary checks
+            if (newX > 0) newX = 0; // Cannot swipe right past start
+            if (newX < maxSwipe * 1.5) newX = maxSwipe * 1.5; // Resistance past max
+
+            element.style.transform = `translateX(${newX}px)`;
+        }
+    }, {passive: true});
+
+    element.addEventListener('touchend', (e) => {
+        element.style.transition = 'transform 0.2s ease-out';
+        const touchX = e.changedTouches[0].clientX;
+        const deltaX = touchX - startX;
+
+        if (isSwiping) {
+            if (!isOpened) {
+                // Was closed, trying to open
+                if (deltaX < -threshold) {
+                    element.style.transform = `translateX(${maxSwipe}px)`;
+                    element.classList.add('swiped-left');
+                } else {
+                    element.style.transform = 'translateX(0)';
+                    element.classList.remove('swiped-left');
+                }
+            } else {
+                // Was opened, trying to close
+                if (deltaX > threshold) {
+                    element.style.transform = 'translateX(0)';
+                    element.classList.remove('swiped-left');
+                } else {
+                    // Stay open
+                    element.style.transform = `translateX(${maxSwipe}px)`;
+                }
+            }
+        } else {
+            // Click handling is preserved if no swipe
+            // If it was open and we tapped it (not swipe), close it?
+            if (isOpened && Math.abs(deltaX) < 5) {
+                 element.style.transform = 'translateX(0)';
+                 element.classList.remove('swiped-left');
+            }
+        }
+        
+        isSwiping = false;
     });
 }
 
 document.getElementById('dish-search').addEventListener('input', renderDishList);
+
+// --- Confirm Delete Logic ---
+function setupConfirmModal() {
+    const modal = document.getElementById('confirm-modal');
+    const cancelBtn = document.getElementById('confirm-cancel-btn');
+    const deleteBtn = document.getElementById('confirm-delete-btn');
+
+    cancelBtn.addEventListener('click', () => {
+        hideModal('confirm-modal');
+        dishToDeleteId = null;
+    });
+
+    deleteBtn.addEventListener('click', () => {
+        if (dishToDeleteId) {
+            deleteDish(dishToDeleteId);
+        }
+        hideModal('confirm-modal');
+    });
+}
+
+function confirmDeleteDish(id) {
+    dishToDeleteId = id;
+    showModal('confirm-modal');
+}
+
+function deleteDish(id) {
+    // 1. Remove from dishes array
+    dishes = dishes.filter(d => d.id !== id);
+    
+    // 2. Remove from meal plans? (Optional: keep or remove. Better to remove to avoid stale refs)
+    Object.keys(mealPlan).forEach(key => {
+        const plan = mealPlan[key];
+        if (Array.isArray(plan)) {
+            mealPlan[key] = plan.filter(pid => pid !== id);
+            if (mealPlan[key].length === 0) delete mealPlan[key];
+        } else if (plan === id) {
+            delete mealPlan[key];
+        }
+    });
+
+    // 3. Save and Render
+    saveData();
+    renderDishList();
+    renderPlanner();
+    showToast('已删除');
+}
 
 // --- Dish Form ---
 function openDishForm(id = null) {
@@ -382,4 +539,3 @@ function setupModals() {
 
 function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
 function hideModal(id) { document.getElementById(id).classList.add('hidden'); }
-

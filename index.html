@@ -174,10 +174,26 @@
         </div>
     </div>
 
+    <!-- 弹窗：确认删除 -->
+    <div id="confirm-modal" class="modal hidden">
+        <div class="modal-content" style="max-width: 300px;">
+            <div class="modal-header">
+                <h3>确认删除</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除这个菜品吗？删除后无法恢复。</p>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn-secondary" id="confirm-cancel-btn" style="flex: 1; padding: 10px; border: 1px solid #ccc; background: white; border-radius: 8px;">取消</button>
+                <button class="btn-danger" id="confirm-delete-btn" style="flex: 1; padding: 10px; background: #ef4444; color: white; border: none; border-radius: 8px;">删除</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 提示条 -->
     <div id="toast" class="toast hidden"></div>
 
     <script src="script.js"></script>
 </body>
 </html>
-

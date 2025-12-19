@@ -11,6 +11,7 @@
     --lunch-bg: #fffbeb;
     --dinner-color: #8b5cf6;
     --dinner-bg: #f3e8ff;
+    --delete-red: #ef4444;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -29,8 +30,9 @@ body {
 .mobile-header {
     /* 适配刘海屏 */
     padding-top: max(var(--safe-area-top, 0px), env(safe-area-inset-top));
+    /* 修正：总高度需要包含安全区域 + 导航栏本身的高度(50px)，确保背景色能覆盖整个区域 */
+    min-height: calc(50px + max(var(--safe-area-top, 0px), env(safe-area-inset-top)));
     height: auto;
-    min-height: 50px;
     background: var(--white);
     display: flex;
     align-items: center;
@@ -185,14 +187,42 @@ body {
     gap: 10px;
 }
 
+/* Swipe Delete Styles */
+.dish-swipe-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    background: var(--delete-red); /* Background for delete area */
+}
+
+.dish-delete-action {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 1rem;
+    z-index: 1;
+}
+
 .dish-card {
     background: var(--white);
     padding: 15px;
-    border-radius: 10px;
+    /* border-radius: 10px;  Removed because container has radius */
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    /* box-shadow: 0 1px 3px rgba(0,0,0,0.05); Removed */
+    position: relative;
+    z-index: 2;
+    transition: transform 0.2s ease-out;
+    width: 100%;
 }
 
 .dish-info { flex: 1; cursor: pointer; padding-right: 10px; }
@@ -277,7 +307,7 @@ body {
     backdrop-filter: blur(3px);
 }
 
-.modal.hidden { display: none; }
+.modal.hidden { display: none !important; }
 
 .modal.bottom-sheet {
     align-items: flex-end;
@@ -394,4 +424,3 @@ body {
 }
 
 .hidden { display: none !important; }
-
